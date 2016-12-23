@@ -1,5 +1,6 @@
 var express = require('express'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    bodyParser = require('body-parser');
 
 var db = mongoose.connect('mongodb://localhost/bookAPI'); //Creates a DB, pass in the connection string, mongodb needs to be running
 
@@ -9,13 +10,22 @@ var app = express(); // init an instance of express
 
 var port = process.env.PORT || 3000;
 
+app.use(bodyParser.json()); // Tell the app that we will use the body parser (the json one), will add the json bpdy to req.body
+app.use(bodyParser.urlencoded({extended: true}));
+
 var bookRouter = express.Router(); //Use a router to defines routes
 
 bookRouter.route('/books')
+    .post(function(req, res) {
+        var book = new Book(req.body); // Create a new Mongoose instence off that book
+
+        book.save(); // Create the new book in the Mongo DB
+        res.status(201).send(book);
+    })
     .get(function(req, res) { // setup the get method for the books route
         var query = {};
 
-        if(req.query.genre){
+        if(req.query.genre) {
             query.genre = req.query.genre;
         }
 
