@@ -26,14 +26,52 @@ var routes = function(Book) {
             });
         });
 
+    bookRouter.use('/:bookId', function(req, res, next) { // .use is the "signal" to say: hey, I am going to use middleware
+        // Next is the next middleware or the route
+        Book.findById(req.params.bookId, function(err, book) {
+            if(err) {
+                res.status(500).send(err);
+            } else if (book) {
+                req.book = book; // Make the book avaible to everything downstreams
+                next();
+            } else {
+                res.status(404).send('no book found');
+            }
+        });
+    });
+
     bookRouter.route('/:bookId') // Get by Id
         .get(function(req, res) {
+            res.json(req.book); // After the middleware
+        })
+        .put(function(req, res) {
+            // After the middleware
+            req.book.title = req.body.title;
+            req.book.author = req.body.author;
+            req.book.genre = req.body.genre;
+            req.book.read = req.body.read;
 
-            Book.findById(req.params.bookId, function(err, book) {
+            req.book.save(function(err) {
                 if(err) {
                     res.status(500).send(err);
                 } else {
-                    res.json(book);
+                    res.json(req.book);
+                }
+            });
+        })
+        .patch(function(req, res) {
+            if(req.body._id)
+                delete req.body._id;
+
+            for(var p in req.body) {
+                req.book[p] = req.body[p];
+            }
+
+            req.book.save(function(err) {
+                if(err) {
+                    res.status(500).send(err);
+                } else {
+                    res.json(req.book);
                 }
             });
         });
